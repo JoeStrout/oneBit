@@ -11,7 +11,7 @@ drawCell = function(index, x, y)
 		0, 0, img.width, img.height, color.black
 	s = str(index)
 	w = s.len * 8
-	gfx.print s, x + cellW/2 - w/2 - 1, y, "#8888FF", "small"
+	gfx.print s, x + cellW/2 - w/2 - 1, y + 1, "#8888FF", "small"
 	gfx.line x, y + textH, x+cellW, y + textH, "#EEEEEE"
 	gfx.drawRect x, y, cellW, cellH, color.silver
 end function
