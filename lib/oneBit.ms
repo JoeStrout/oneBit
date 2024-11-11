@@ -152,6 +152,17 @@ findTile = function
 	return idx
 end function
 
-clear
-prepareTileDisplay 5
-print "Hello world!  This is... a test?", 4, 10, null, color.aqua
+if locals == globals then
+	// When running in global space, don't clobber
+	// the standard 'print' function.  
+	// Call ours 'tilePrint' instead.
+	tilePrint = @print
+	globals.remove "print"
+	clear
+	prepareTileDisplay 5
+	tilePrint "Use arrow keys to explore the tile set!", 4, 39, null, color.aqua
+	tilePrint "Press Esc when finished.", 12, 1, null, color.silver
+	findTile
+	clear
+	text.row = 0
+end if

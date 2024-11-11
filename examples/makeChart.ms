@@ -1,3 +1,7 @@
+// This script generates a handy reference chart, with
+// every tile labeled with its index, and saves it as
+// "chart.png".
+
 import "oneBit"
 
 textH = 16
@@ -8,7 +12,7 @@ drawCell = function(index, x, y)
 	gfx.fillRect x, y, cellW, cellH, color.white
 	img = oneBit.getTileImage(index)
 	gfx.drawImage img, x, y + textH, cellW, cellW,
-		0, 0, img.width, img.height, color.black
+	0, 0, img.width, img.height, color.black
 	s = str(index)
 	w = s.len * 8
 	gfx.print s, x + cellW/2 - w/2 - 1, y + 1, "#8888FF", "small"
