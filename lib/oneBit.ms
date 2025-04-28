@@ -110,11 +110,11 @@ findTile = function
 		r0 = max(row-4, 0)
 		r1 = min(row+4, 32)
 		subimg = oneBitImage.getImage(c0*16, r0*16,
-		(c1-c0+1)*16, (r1-r0+1)*16)
+		  (c1-c0+1)*16, (r1-r0+1)*16)
 		disp.drawImage subimg, 
-		left - cs*(min(col-4, 0)), 
-		bottom - cs*(min(row-4, 0)),
-		subimg.width * 4, subimg.height * 4
+		  left - cs*(min(col-4, 0)), 
+		  bottom - cs*(min(row-4, 0)),
+		  subimg.width * 4, subimg.height * 4
 		disp.color = "#AAAAFF"
 		for x in range(left, left+cs*9, cs)
 			disp.line x, bottom, x, bottom+cs*9
@@ -125,8 +125,11 @@ findTile = function
 		disp.drawRect left + cs*4, bottom + cs*4, cs, cs, "#FFFFAA", 3
 		idx = (31 - row) * 32 + col
 		disp.drawImage getTileImage(idx), 
-		left + cs*10, 320 - 64, 128, 128
+		  left + cs*10, 320 - 64, 128, 128
+		disp.drawRect left + cs*10, 320 - 64, 128, 128
 		disp.print idx, 780, 320 - 100, disp.color, "large"
+		s = (col)*16 + "," + row*16 + ", 16,16"
+		disp.print s, 750, 320 - 140, disp.color, "small"
 		if key.available then
 			k = key.get.code
 			if k == 10 or k == 13 or k == 27 then
