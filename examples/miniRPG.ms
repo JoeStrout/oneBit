@@ -9,11 +9,14 @@ import "stringUtil"
 //   disp.overlay (trees, roofs, etc.)
 clear
 disp = {}
-disp.width = 20
-disp.height = 20
+disp.width = 32
+disp.height = 19
 disp.background = oneBit.prepareTileDisplay(6, 32, disp.width, disp.height, true)
 disp.main = oneBit.prepareTileDisplay(5, 32, disp.width, disp.height, true)
 disp.overlay = oneBit.prepareTileDisplay(4, 32, disp.width, disp.height, true)
+for d in [disp.background, disp.main, disp.overlay]
+	d.scrollY = -32
+end for
 
 placeSmallStuff = function(whichDisp, options, count, color="#FFFFFF")
 	for i in range(count-1)
@@ -72,7 +75,7 @@ Entity.place = function(x, y)
 	disp.main.setCell self.x, self.y, self.tileIdx
 	disp.main.setCellTint self.x, self.y, self.color
 end function
-Entity.interact = null // do something when the player interacts with this!
+Entity.interact = function(agent); end function
 
 // Make a Agent class, to represent any body/thing that can move around
 // and get a periodic update.
@@ -84,9 +87,9 @@ Agent.move = function(dx, dy, forceSuccess=false)
 	nx = self.x + dx
 	ny = self.y + dy
 	if nx < 0 or nx >= disp.width or ny < 0 or ny >= disp.height then return
-	if disp.main.cell(nx, ny) != null then
+	if disp.main.cell(nx, ny) != null and (dx or dy) then
 		ent = Entity.FindAt(nx, ny)
-		if ent != null then ent.interact
+		if ent != null then ent.interact self
 		if not forceSuccess then return
 	end if
 	disp.main.setCell self.x, self.y, null
@@ -112,7 +115,8 @@ player.init 10, 10, 25
 // Prepare some NPCs.
 girl = new Agent
 girl.init 17, 15, 127, "#FFBBBB", "Girl"
-girl.interact = function
+girl.interact = function(agent)
+	if agent != player then return
 	if dog.following != self then
 		self.say "I've lost my dog Fido!  Can you help me find him?"
 		dog.name = "Fido"
@@ -128,6 +132,7 @@ girl.update = function
 		if abs(dog.x - self.x) < 2 and abs(dog.y - self.y) < 2 then
 			self.say "Fido!!!"
 			dog.following = self
+			dog.name = "Fido"
 		end if
 	end if
 end function
@@ -136,11 +141,11 @@ dog = new Agent
 dog.init 4, 2, 255, "#F0C06E", "Dog"
 dog.found = false
 dog.following = null
-dog.interact = function
+dog.interact = function(agent)
 	self.say "Ruff!"
 	if not self.found then
 		self.found = true
-		self.following = player
+		self.following = agent
 	end if
 end function
 dog.update = function
