@@ -45,7 +45,7 @@ nameTile 979, "%"
 nameTile 819, "!"
 nameTile 821, "?"
 
-prepareTileDisplay = function(dispIndex=4, cellSize=16, columns=null, rows=null)
+prepareTileDisplay = function(dispIndex=4, cellSize=16, columns=null, rows=null, compact=false)
 	display(dispIndex).mode = displayMode.tile
 	d = display(dispIndex)
 	d.tileSet = oneBitImage
@@ -54,6 +54,7 @@ prepareTileDisplay = function(dispIndex=4, cellSize=16, columns=null, rows=null)
 	if rows == null then rows = round(640/cellSize)
 	d.extent = [columns, rows]
 	d.cellSize = cellSize
+	if compact then d.overlap = 2 else d.overlap = 0
 	d.clear
 	return d	
 end function

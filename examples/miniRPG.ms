@@ -11,9 +11,9 @@ clear
 disp = {}
 disp.width = 20
 disp.height = 20
-disp.background = oneBit.prepareTileDisplay(6, 32, disp.width, disp.height)
-disp.main = oneBit.prepareTileDisplay(5, 32, disp.width, disp.height)
-disp.overlay = oneBit.prepareTileDisplay(4, 32, disp.width, disp.height)
+disp.background = oneBit.prepareTileDisplay(6, 32, disp.width, disp.height, true)
+disp.main = oneBit.prepareTileDisplay(5, 32, disp.width, disp.height, true)
+disp.overlay = oneBit.prepareTileDisplay(4, 32, disp.width, disp.height, true)
 
 placeSmallStuff = function(whichDisp, options, count, color="#FFFFFF")
 	for i in range(count-1)
@@ -40,26 +40,122 @@ for i in range(4)
 	disp.overlay.setCellTint x, y+1, "#2FA14AFF"
 end for
 
-player = {}
-player.tileIdx = 25
-player.x = floor(disp.width/2)
-player.y = floor(disp.height/2)
-player.lastX = -1
-player.lastY = -1
+x = 2; y = 4
+disp.main.setCell x, y, 416; disp.main.setCellTint x, y, "#BBBBBB"
+disp.overlay.setCell x, y+1, 384; disp.overlay.setCellTint x, y+1, "#BBBBBB"
+disp.main.setCell x, y+1, 0  // (makes it clear and impassible)
+disp.background.setCell x, y+1, null
 
-player.move = function(dx, dy)
+// Make an Entity class - anything on the map that can be interacted with.
+Entity = {}
+Entity.x = 0
+Entity.y = 0
+Entity.tileIdx = 248
+Entity.color = color.white
+Entity.name = ""
+Entity.Instances = []
+Entity.FindAt = function(x, y)
+	for inst in Entity.Instances
+		if inst.x == x and inst.y == y then return inst
+	end for
+	return null
+end function
+Entity.init = function(x, y, tileIdx=null, color=null, name="")
+	Entity.Instances.push self
+	if tileIdx != null then self.tileIdx = tileIdx
+	if color != null then self.color = color
+	if name then self.name = name
+	self.place x, y
+end function
+Entity.place = function(x, y)
+	self.x = x; self.y = y
+	disp.main.setCell self.x, self.y, self.tileIdx
+	disp.main.setCellTint self.x, self.y, self.color
+end function
+Entity.interact = null // do something when the player interacts with this!
+
+// Make a Agent class, to represent any body/thing that can move around
+// and get a periodic update.
+Agent = new Entity
+Agent.x = 0
+Agent.y = 0
+Agent.tileIdx = 248
+Agent.move = function(dx, dy, forceSuccess=false)
 	nx = self.x + dx
 	ny = self.y + dy
 	if nx < 0 or nx >= disp.width or ny < 0 or ny >= disp.height then return
-	if disp.main.cell(nx, ny) != null then return
+	if disp.main.cell(nx, ny) != null then
+		ent = Entity.FindAt(nx, ny)
+		if ent != null then ent.interact
+		if not forceSuccess then return
+	end if
 	disp.main.setCell self.x, self.y, null
-	self.x = nx; self.y = ny
-	disp.main.setCell self.x, self.y, self.tileIdx
-	disp.main.setCellTint self.x, self.y, "#EEEEEE"
-end function	
+	self.place nx, ny
+end function
+Agent.say = function(speech)
+	s = self.name
+	if s then s += ": "
+	s += """" + speech + """"
+	print char(13) + s
+end function
+Agent.update = null
+Agent.UpdateAll = function
+	for ent in Entity.Instances
+		if ent isa Agent then ent.update
+	end for
+end function
 
-disp.main.setCell player.x, player.y, null
-player.move 0, 0
+// Prepare the player.
+player = new Agent
+player.init 10, 10, 25
+
+// Prepare some NPCs.
+girl = new Agent
+girl.init 17, 15, 127, "#FFBBBB", "Girl"
+girl.interact = function
+	if dog.following != self then
+		self.say "I've lost my dog Fido!  Can you help me find him?"
+		dog.name = "Fido"
+	else
+		self.say "Thank you for finding Fido!"
+	end if
+end function
+girl.update = function
+	if dog.following == self then return
+	dx = dog.x - self.x; dy = dog.y - self.y
+	if 0 < abs(dx) + abs(dy) < 5 then
+		self.move sign(dx), sign(dy)
+		if abs(dog.x - self.x) < 2 and abs(dog.y - self.y) < 2 then
+			self.say "Fido!!!"
+			dog.following = self
+		end if
+	end if
+end function
+
+dog = new Agent
+dog.init 4, 2, 255, "#F0C06E", "Dog"
+dog.found = false
+dog.following = null
+dog.interact = function
+	self.say "Ruff!"
+	if not self.found then
+		self.found = true
+		self.following = player
+	end if
+end function
+dog.update = function
+	if not self.found then
+		// wander randomly
+		if rnd < 0.1 then self.move floor(rnd*3)-1, floor(rnd*3)-1
+	else if self.following then
+		dx = self.following.x - self.x
+		dy = self.following.y - self.y
+		if abs(dx) + abs(dy) > 2 and rnd < 0.8 then
+			self.move sign(dx), sign(dy)
+		end if
+	end if
+end function
+
 
 // Define movement keys.  I've included arrows, WASD (Qwerty),
 // and Dvorak equivalents.
@@ -98,7 +194,12 @@ handleKey = function(k)
 	end if
 	dx = k.contains("E") - k.contains("W")
 	dy = k.contains("N") - k.contains("S")
+
+	text.clear
+	text.row = 0; text.column = 0; text.delimiter = ""
 	player.move dx, dy
+	Agent.UpdateAll
+	text.delimiter = char(13)
 end function
 
 gameOver = false
